@@ -1,0 +1,251 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blue Morpho — Spider Rescue</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100svh;padding:clamp(16px,4vw,48px);display:grid;place-items:center;background:#f3f1e7;color:#243f36;font-family:Georgia,serif}main{width:min(1120px,100%)}header{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:24px}.eyebrow{margin:0 0 10px;color:#687965;font:11px/1.5 system-ui,sans-serif;letter-spacing:.23em;text-transform:uppercase}h1{margin:0;font-size:clamp(36px,5vw,60px);font-weight:normal;letter-spacing:-.045em;line-height:1}h1 em{color:#397586;font-weight:normal}.intro{max-width:280px;margin:0;font:14px/1.65 system-ui,sans-serif;color:#627168}.stage{position:relative;overflow:hidden;border-radius:16px;background:#c6d9b8;box-shadow:0 18px 55px #243f361c;border:1px solid #345d3820}canvas{display:block;width:100%;aspect-ratio:16/10;outline-offset:-5px}.hud{position:absolute;top:22px;left:24px;padding:13px 18px;border:1px solid #ffffff70;border-radius:12px;background:#f9fcf0d9;pointer-events:none}.hud-label{display:block;font:10px system-ui,sans-serif;letter-spacing:.17em;text-transform:uppercase;color:#647568}.count{display:block;font-size:29px;margin-top:3px}.count small{font:14px system-ui,sans-serif;color:#718171}.progress{width:108px;height:3px;background:#d6dfcd;border-radius:4px;margin-top:8px;overflow:hidden}.progress span{display:block;height:100%;width:0;background:#388caa;transition:width .25s}.scene-label{position:absolute;right:24px;top:26px;color:#365644;font:10px system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase}.message{position:absolute;inset:0;display:grid;place-items:center;background:#23432b30;padding:20px}.message[hidden]{display:none}.card{max-width:365px;padding:34px;text-align:center;background:#fbfcf0f2;border:1px solid #fff;border-radius:16px;box-shadow:0 18px 50px #17392420}h2{margin:0 0 12px;font-size:36px;font-weight:normal;letter-spacing:-.035em}.card p{font:14px/1.7 system-ui,sans-serif;color:#627168;margin:0 0 24px}button{background:#294f42;color:#fffef2;border:0;border-radius:30px;padding:13px 24px;font:13px system-ui,sans-serif;cursor:pointer}button:hover{background:#39705b}button:focus-visible{outline:3px solid #219bd1;outline-offset:4px}footer{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:20px;color:#6a776a;font:12px/1.6 system-ui,sans-serif}kbd{display:inline-block;padding:2px 9px;border:1px solid #c8cebf;border-bottom-width:2px;border-radius:5px;font:15px system-ui,sans-serif;background:#fafaf2;color:#365544}@media(max-width:600px){header{display:block;margin-bottom:18px}.intro{margin-top:15px;max-width:none}.hud{top:12px;left:12px;padding:8px 12px}.count{font-size:22px}.scene-label{display:none}footer{align-items:start}footer span:last-child{max-width:125px;text-align:right}}
+/* Warm warning accents distinguish the spiders from the protected blue morphos. */
+h1 em{color:#875048}.hud{background:#fff8e9ed;border-color:#d8baa3}.hud-label{color:#86564b}.progress span{background:#a45448}.scene-label{background:#f7fbecdf;border-radius:20px;padding:9px 13px;top:20px;letter-spacing:.08em}.card{border-color:#d2dcc3}button{background:#78493f}button:hover{background:#965b4d}.protected{color:#367f9a;font-weight:600}
+.movement{display:flex;align-items:center;gap:10px;margin-top:16px;font:12px/1.5 system-ui,sans-serif;color:#627168}.move-button{min-width:64px;min-height:48px;border-radius:10px;font-size:24px;touch-action:none;user-select:none;-webkit-user-select:none}.move-button:active,.move-button.is-held{background:#39705b;transform:translateY(1px)}canvas:focus-visible{outline:3px solid #39705b}.movement span{margin-left:4px}
+</style>
+</head>
+<body>
+<main>
+<header><div><p class="eyebrow">Protect the summer clearing</p><h1>Spider <em>Rescue</em></h1></div><p class="intro">15 sneaky spiders. Four blue morphos.<br>Catch the spiders and clear their webs.</p></header>
+<div class="stage">
+<canvas id="game" width="1120" height="700" tabindex="0" aria-label="Spider rescue. Move with the left and right arrow keys to catch 15 spiders. Each caught spider's web disappears. Protect the four blue butterflies.">This game requires HTML canvas support.</canvas>
+<div class="hud" role="status" aria-live="polite" aria-atomic="true"><span class="hud-label">Spiders caught</span><span class="count"><span id="caught">0</span> <small>/ 15</small></span><div class="progress" aria-hidden="true"><span id="progress"></span></div></div>
+<span class="scene-label"><span class="protected">4 blue morphos</span> · Keep them fluttering</span>
+<div class="message" id="message" hidden role="dialog" aria-modal="true" aria-labelledby="win-title" aria-describedby="win-copy"><div class="card"><p class="eyebrow">The clearing is safe</p><h2 id="win-title">Butterflies rescued!</h2><p id="win-copy">All 15 spiders caught. Every web cleared.<br>The four blue morphos can flutter in peace.</p><button id="replay" type="button">Play again <span aria-hidden="true">↗</span></button></div></div>
+</div>
+<div class="movement" role="group" aria-label="Movement controls"><button class="move-button" id="move-left" type="button" aria-label="Move left">←</button><button class="move-button" id="move-right" type="button" aria-label="Move right">→</button><span>Hold a button to move, or click the clearing and use ← / → or A / D.</span></div>
+<footer><span>Catch spiders with your net. Their webs disappear with them.</span><span>Touch a butterfly with the net and you lose!</span></footer>
+</main>
+<script>
+'use strict';
+const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
+const W = 1120, H = 700, TARGET = 15, TAU = Math.PI * 2;
+const caughtLabel = document.getElementById('caught'), progress = document.getElementById('progress');
+const message = document.getElementById('message'), replay = document.getElementById('replay');
+const keys = new Set();
+const pointerDirections = new Map();
+const leftButton = document.getElementById('move-left'), rightButton = document.getElementById('move-right');
+function clearMovement() {
+ keys.clear();pointerDirections.clear();
+ leftButton.classList.remove('is-held');rightButton.classList.remove('is-held');
+}
+const state = { caught: 0, won: false, lost: false, time: 0, playerX: W / 2, stride: 0, walking: false, butterflies: [], spiders: [], ripples: [] };
+let audio = null, lastTime = null;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function ellipse(c,x,y,rx,ry,color) { c.beginPath(); c.ellipse(x,y,rx,ry,0,0,TAU); c.fillStyle=color; c.fill(); }
+function line(c,points,color,width) { c.beginPath(); c.moveTo(...points[0]); for(let i=1;i<points.length;i++) c.lineTo(...points[i]); c.strokeStyle=color; c.lineWidth=width; c.stroke(); }
+// Cache the static forest: layered deciduous trees, sunlight and a grassy clearing.
+const forest = document.createElement('canvas'); forest.width=W; forest.height=H;
+function paintForest() {
+ const c=forest.getContext('2d'); let seed=37;
+ const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+ const sky=c.createLinearGradient(0,0,0,H); sky.addColorStop(0,'#a8cbb9');sky.addColorStop(.48,'#e2e8bb');sky.addColorStop(1,'#8ca96b');c.fillStyle=sky;c.fillRect(0,0,W,H);
+ for(let layer=0;layer<3;layer++) for(let i=0;i<18;i++) {
+  const x=rand()*W,y=430+rand()*100,thick=5+layer*7+rand()*12;
+  c.fillStyle=['#89ae9a55','#73977f60','#537a6255'][layer];c.beginPath();c.moveTo(x-thick,y);c.lineTo(x-thick*.3,0);c.lineTo(x+thick*.5,0);c.lineTo(x+thick,y);c.fill();
+  line(c,[[x,210],[x-55,105],[x-80,70]],c.fillStyle,thick*.35);
+  for(let j=0;j<7;j++) ellipse(c,x+(rand()-.5)*190,rand()*175-30,65+rand()*65,35+rand()*45,['#88b59348','#6d9b7760','#4d805d55'][layer]);
+ }
+ const glow=c.createRadialGradient(755,175,10,735,230,490);glow.addColorStop(0,'#ffffdbd0');glow.addColorStop(.45,'#f8f4c364');glow.addColorStop(1,'#ffffd000');c.fillStyle=glow;c.fillRect(0,0,W,H);
+ for(let i=0;i<5;i++){c.fillStyle='#fffddd14';c.beginPath();c.moveTo(740+i*25,0);c.lineTo(180+i*170,H);c.lineTo(300+i*165,H);c.lineTo(765+i*24,0);c.fill();}
+ c.fillStyle='#a5b879';c.beginPath();c.moveTo(0,550);c.bezierCurveTo(260,491,430,590,690,545);c.bezierCurveTo(860,510,990,534,W,513);c.lineTo(W,H);c.lineTo(0,H);c.fill();
+ c.fillStyle='#bfc891';c.beginPath();c.moveTo(530,538);c.bezierCurveTo(440,608,740,600,835,H);c.lineTo(350,H);c.bezierCurveTo(670,603,353,586,530,538);c.fill();
+ for(const [x,tilt] of [[40,-30],[1080,45]]) {
+  c.fillStyle='#365e4b';c.beginPath();c.moveTo(x-34,H);c.quadraticCurveTo(x+tilt,280,x-20,0);c.lineTo(x+36,0);c.quadraticCurveTo(x+10+tilt,360,x+43,H);c.fill();
+  line(c,[[x+5,370],[x+(x<500?85:-95),173],[x+(x<500?150:-160),90]],'#365e4b',15);
+  line(c,[[x-10,640],[x+tilt,320],[x+1,65]],'#66816a70',4);
+ }
+ for(let i=0;i<95;i++) ellipse(c,rand()*W,rand()*95-25,25+rand()*50,13+rand()*28,['#2f6049b0','#477653a0','#668a5660'][i%3]);
+ for(let i=0;i<1100;i++) {
+  const x=rand()*W,y=558+rand()*142,h=3+rand()*17;
+  if(Math.abs(x-570)<(y-530)*.85 && rand()<.94) continue;
+  line(c,[[x,y],[x+rand()*9-4,y-h]],['#63865165','#d2d59990','#3e705755'][i%3],1.2);
+  if(i%29===0) ellipse(c,x,y-h,2.5,2,'#f6efd0');
+ }
+ for(const side of [0,W]) for(let i=0;i<14;i++) {
+  const x=side+(side===0?1:-1)*rand()*200,y=H+10,tx=x+rand()*70-35,ty=H-30-rand()*85;
+  line(c,[[x,y],[tx,ty]],'#42694b',2);
+  for(let j=1;j<6;j++){const f=j/7;c.save();c.translate(x+(tx-x)*f,y+(ty-y)*f);c.rotate(-.5);ellipse(c,-9,-4,14*(1-f/2),4,'#4b7750');c.rotate(1);ellipse(c,9,-4,14*(1-f/2),4,'#527e52');c.restore();}
+ }
+}
+function resetGame() {
+ state.caught=0;state.won=false;state.lost=false;state.playerX=W/2;state.stride=0;state.walking=false;state.time=0;state.ripples=[];clearMovement();
+ // Start above the net so a new round never begins with an unavoidable collision.
+ state.butterflies=Array.from({length:4},(_,i)=>({x:200+i*230,y:150+i*15,baseX:200+i*230,phase:Math.random()*TAU,speed:.45+Math.random()*.15,size:.8+Math.random()*.14}));
+ state.spiders=Array.from({length:TARGET},(_,i)=>({x:140+(i%5)*210,y:240+Math.floor(i/5)*60,webX:140+(i%5)*210,webY:150+Math.floor(i/5)*115,webRadius:34+(i%3)*5,phase:Math.random()*TAU,speed:27+Math.random()*14,target:i%4}));
+ caughtLabel.textContent='0';progress.style.width='0%';message.hidden=true;
+}
+function unlockAudio() {
+ try { if(!audio){const Audio=window.AudioContext||window.webkitAudioContext;if(Audio)audio=new Audio();}if(audio&&audio.state==='suspended')audio.resume().catch(()=>{}); } catch(_) { /* Audio is optional if unavailable in this browser. */ }
+}
+function plunk() {
+ if(!audio||audio.state!=='running')return;
+ const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.setValueAtTime(470,t);o.frequency.exponentialRampToValueAtTime(105,t+.17);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.23,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+.24);
+ o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.25);o.onended=()=>{o.disconnect();g.disconnect();};
+}
+// Drawing and catching use exactly the same net ellipse.
+function netGeometry(){return{x:state.playerX+94,y:300,rx:48,ry:57};}
+function finishGame(won) {
+ state.won=won;state.lost=!won;state.walking=false;clearMovement();
+ message.querySelector('.eyebrow').textContent=won?'The clearing is safe':'Watch the butterflies';
+ document.getElementById('win-title').textContent=won?'Butterflies rescued!':'You hit a butterfly!';
+ document.getElementById('win-copy').textContent=won
+  ?'All 15 spiders caught. Every web cleared. The four blue morphos can flutter in peace.'
+  :'You lose! Keep your net away from the blue butterflies and catch only the spiders.';
+ message.hidden=false;replay.focus({preventScroll:true});
+}
+function touchesButterfly(b,net) {
+ // Include the wings, with their changing width as they flap.
+ const flap=.24+.76*(.5+.5*Math.sin(state.time*5.4+b.phase));
+ const rx=net.rx+32*b.size*flap,ry=net.ry+26*b.size;
+ return ((b.x-net.x)/rx)**2+((b.y-net.y)/ry)**2<=1;
+}
+function update(dt) {
+ if(state.won||state.lost)return;
+ state.time+=dt;
+ const heldPointers = new Set(pointerDirections.values());
+ const direction=Number(keys.has('ArrowRight')||keys.has('KeyD')||heldPointers.has('right'))-Number(keys.has('ArrowLeft')||keys.has('KeyA')||heldPointers.has('left'));
+ state.walking=direction!==0&&!state.won;
+ if(!state.won)state.playerX=clamp(state.playerX+direction*290*dt,38,W-150);
+ if(state.walking)state.stride+=dt*10;
+ const net=netGeometry();
+ for(const b of state.butterflies){
+  const t=state.time*b.speed+b.phase;
+  let tx=b.baseX+Math.sin(t*.73)*145+Math.sin(t*2.2)*24,ty=245+Math.sin(t)*95;
+  // Butterflies dodge spiders, but the player must keep the net away from them.
+  for(const s of state.spiders){const dx=b.x-s.x,dy=b.y-s.y,d=Math.hypot(dx,dy);if(d<105){tx+=(dx/(d||1))*55;ty+=(dy/(d||1))*45;}}
+  const f=1-Math.exp(-dt*2);b.x+=(clamp(tx,100,W-80)-b.x)*f;b.y+=(clamp(ty,125,395)-b.y)*f;
+ }
+ // A butterfly hit takes priority over catching the final spider in the same frame.
+ if(state.butterflies.some(b=>touchesButterfly(b,net))){finishGame(false);return;}
+ for(let i=state.spiders.length-1;i>=0;i--){
+  const s=state.spiders[i],prey=state.butterflies[s.target];
+  // Crawl toward a butterfly on a silk tether, always within the net's reachable band.
+  const tx=clamp(prey.x+Math.sin(state.time*1.2+s.phase)*22,105,W-85),ty=clamp(prey.y,250,350);
+  const dx=tx-s.x,dy=ty-s.y,d=Math.hypot(dx,dy),step=Math.min(d,s.speed*dt);
+  if(d>0){s.x+=dx/d*step;s.y+=dy/d*step;}
+  if(!state.won&&((s.x-net.x)/net.rx)**2+((s.y-net.y)/net.ry)**2<1){
+   // The web belongs to this spider, so removing it removes its web and tether too.
+   state.spiders.splice(i,1);state.caught++;state.ripples.push({x:s.x,y:s.y,age:0});plunk();
+   caughtLabel.textContent=String(state.caught);progress.style.width=(state.caught/TARGET*100)+'%';
+   if(state.caught===TARGET){finishGame(true);return;}
+  }
+ }
+ state.ripples.forEach(r=>r.age+=dt);state.ripples=state.ripples.filter(r=>r.age<.65);
+}
+function drawWeb(s) {
+ ctx.save();ctx.lineWidth=1;ctx.strokeStyle='#f8fff1a0';
+ for(let spoke=0;spoke<8;spoke++){
+  const a=spoke*TAU/8;line(ctx,[[s.webX,s.webY],[s.webX+Math.cos(a)*s.webRadius,s.webY+Math.sin(a)*s.webRadius]],'#f8fff180',1);
+ }
+ for(let ring=1;ring<=4;ring++){
+  const r=s.webRadius*ring/4;ctx.beginPath();
+  for(let spoke=0;spoke<=8;spoke++){
+   const a=spoke*TAU/8,x=s.webX+Math.cos(a)*r,y=s.webY+Math.sin(a)*r;
+   if(spoke===0)ctx.moveTo(x,y);else{const mid=a-TAU/16;ctx.quadraticCurveTo(s.webX+Math.cos(mid)*r*.78,s.webY+Math.sin(mid)*r*.78,x,y);}
+  }ctx.stroke();
+ }
+ line(ctx,[[s.webX,s.webY],[s.x,s.y]],'#effbe9a0',1);ctx.restore();
+}
+function drawSpider(s) {
+ ctx.save();ctx.translate(s.x,s.y);ctx.lineCap='round';ctx.lineJoin='round';
+ for(const side of [-1,1])for(let leg=0;leg<4;leg++){
+  const wiggle=Math.sin(state.time*7+s.phase+leg*1.6)*3,y=-12+leg*7;
+  line(ctx,[[side*7,y*.5],[side*(20+wiggle),y-7],[side*(29+wiggle),y+(leg<2?-14:15)]],'#302936',2.5);
+ }
+ const body=ctx.createRadialGradient(-4,-7,2,0,-3,17);body.addColorStop(0,'#645060');body.addColorStop(1,'#251e2c');
+ ellipse(ctx,0,-5,12,15,body);ellipse(ctx,0,11,9,8,'#322532');
+ ellipse(ctx,-3.7,10,2.2,2.5,'#ff7852');ellipse(ctx,3.7,10,2.2,2.5,'#ff7852');
+ line(ctx,[[-7,5],[-2,7]],'#180f21',2);line(ctx,[[7,5],[2,7]],'#180f21',2);
+ line(ctx,[[-4,17],[-3,21]],'#edcfb7',1.5);line(ctx,[[4,17],[3,21]],'#edcfb7',1.5);ctx.restore();
+}
+function drawMorpho(b) {
+ const t=state.time,flap=.24+.76*(.5+.5*Math.sin(t*5.4+b.phase));
+ ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.sin(t*.8+b.phase)*.22);ctx.scale(b.size,b.size);
+ for(const side of [-1,1]){
+  ctx.save();ctx.scale(side*flap,1);
+  const blue=ctx.createLinearGradient(0,6,43,-24);blue.addColorStop(0,'#124b9e');blue.addColorStop(.28,'#168ada');blue.addColorStop(.62,'#47ccf4');blue.addColorStop(.83,'#1688df');blue.addColorStop(1,'#153769');
+  // Rounded hindwings and swept forewings with dark margins, veins and edge spots.
+  ctx.fillStyle=blue;ctx.strokeStyle='#162c51';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(2,1);ctx.bezierCurveTo(17,-3,39,0,35,18);ctx.bezierCurveTo(31,29,25,33,21,30);ctx.bezierCurveTo(15,35,8,27,2,13);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(2,-6);ctx.bezierCurveTo(13,-24,31,-37,43,-34);ctx.bezierCurveTo(49,-31,43,-14,39,-4);ctx.bezierCurveTo(34,5,19,9,3,8);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.lineWidth=.65;ctx.strokeStyle='#153e7885';
+  for(const [x,y] of [[41,-30],[40,-20],[35,-9],[27,3],[30,19],[23,28],[14,26]]){ctx.beginPath();ctx.moveTo(3,2);ctx.quadraticCurveTo(x*.55,y*.25-1,x,y);ctx.stroke();}
+  ctx.globalAlpha=.12+.12*Math.sin(t*1.7+b.phase+side);line(ctx,[[9,-4],[24,-19],[36,-26]],'#c5f9ff',2.5);ctx.globalAlpha=1;
+  for(const [x,y] of [[41,-28],[40,-22],[37,-15],[32,19],[27,26]])ellipse(ctx,x,y,1,1.4,'#b2d6dfb0');ctx.restore();
+ }
+ ellipse(ctx,0,6,2.1,14,'#142d37');ellipse(ctx,0,-7,2.7,4.4,'#1b333d');ellipse(ctx,0,-12,2.4,2.6,'#152a35');ctx.strokeStyle='#19303a';ctx.lineWidth=.8;
+ for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(side,-13);ctx.quadraticCurveTo(side*4,-23,side*8,-22);ctx.stroke();ellipse(ctx,side*8,-22,.9,.9,'#19303a');}ctx.restore();
+}
+function drawPlayer() {
+ const x=state.playerX,stride=state.walking?Math.sin(state.stride)*15:0;
+ ellipse(ctx,x,637,48,8,'#36553722');ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#293e35';ctx.lineWidth=5;
+ // Head top is y=350: the vertical midpoint of the 700px scene.
+ ctx.beginPath();ctx.arc(x,372,22,0,TAU);ctx.stroke();
+ line(ctx,[[x,394],[x-2,511]],'#293e35',5);
+ line(ctx,[[x-2,511],[x-23-stride,575],[x-32-stride,634]],'#293e35',5);
+ line(ctx,[[x-2,511],[x+23+stride,573],[x+32+stride,634]],'#293e35',5);
+ line(ctx,[[x,419],[x-33,454],[x-38+stride*.3,488]],'#293e35',4.5);
+ line(ctx,[[x,419],[x+30,440],[x+53,402]],'#293e35',4.5);
+ const n=netGeometry();line(ctx,[[x+44,425],[n.x-7,n.y+n.ry-1]],'#8b7049',5);line(ctx,[[x+44,423],[n.x-7,n.y+n.ry-1]],'#c9b17c',2);
+ ctx.beginPath();ctx.ellipse(n.x,n.y,n.rx,n.ry,0,0,TAU);ctx.fillStyle='#f5ffed22';ctx.fill();ctx.save();ctx.clip();
+ for(let i=-110;i<110;i+=12){line(ctx,[[n.x+i-60,n.y-70],[n.x+i+60,n.y+70]],'#f6ffec75',1);line(ctx,[[n.x+i+60,n.y-70],[n.x+i-60,n.y+70]],'#e9f4df80',1);}ctx.restore();
+ ctx.beginPath();ctx.ellipse(n.x,n.y,n.rx,n.ry,0,0,TAU);ctx.strokeStyle='#96794e';ctx.lineWidth=3;ctx.stroke();ctx.beginPath();ctx.ellipse(n.x,n.y,n.rx-2,n.ry-2,0,0,TAU);ctx.strokeStyle='#ede4b8';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+}
+function draw() {
+ ctx.drawImage(forest,0,0,W,H);
+ for(let i=0;i<25;i++){const x=(i*137+Math.sin(state.time*.2+i)*25+W)%W,y=(i*79+state.time*(2+i%3))%530+80,r=i%3===0?1.8:1;ellipse(ctx,x,y,r,r,'#fffce7a0');}
+ state.spiders.forEach(drawWeb);drawPlayer();state.spiders.forEach(drawSpider);state.butterflies.forEach(drawMorpho);
+ for(const r of state.ripples){ctx.save();ctx.globalAlpha=1-r.age/.65;ctx.strokeStyle='#ddffff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(r.x,r.y,12+r.age*48,0,TAU);ctx.stroke();ctx.restore();}
+}
+function resize(){const ratio=Math.min(window.devicePixelRatio||1,2),scale=canvas.getBoundingClientRect().width/W*ratio;canvas.width=Math.round(W*scale);canvas.height=Math.round(H*scale);ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);draw();}
+function movementKey(event) {
+ if(['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(event.code))return event.code;
+ return {ArrowLeft:'ArrowLeft',ArrowRight:'ArrowRight',a:'KeyA',A:'KeyA',d:'KeyD',D:'KeyD'}[event.key];
+}
+window.addEventListener('keydown',event=>{
+ const key=movementKey(event);if(!key||event.altKey||event.ctrlKey||event.metaKey)return;
+ event.preventDefault();if(!state.won&&!state.lost){keys.add(key);unlockAudio();}
+},true);
+window.addEventListener('keyup',event=>{const key=movementKey(event);if(key){event.preventDefault();keys.delete(key);}},true);
+window.addEventListener('blur',()=>{clearMovement();lastTime=null;});
+document.addEventListener('visibilitychange',()=>{clearMovement();lastTime=null;});
+for(const [button,direction] of [[leftButton,'left'],[rightButton,'right']]) {
+ button.addEventListener('pointerdown',event=>{
+  if(event.button!==0||state.won||state.lost)return;
+  event.preventDefault();canvas.focus({preventScroll:true});
+  pointerDirections.set(event.pointerId,direction);button.classList.add('is-held');
+  button.setPointerCapture(event.pointerId);unlockAudio();
+ });
+ const release=event=>{
+  pointerDirections.delete(event.pointerId);
+  if(![...pointerDirections.values()].includes(direction))button.classList.remove('is-held');
+ };
+ button.addEventListener('pointerup',release);
+ button.addEventListener('pointercancel',release);
+ button.addEventListener('lostpointercapture',release);
+ // Keyboard activation and assistive-technology clicks also move the catcher.
+ button.addEventListener('click',event=>{
+  if(event.detail!==0||state.won||state.lost)return;
+  state.playerX=clamp(state.playerX+(direction==='right'?24:-24),38,W-150);unlockAudio();
+ });
+}
+canvas.addEventListener('pointerdown',()=>{unlockAudio();canvas.focus({preventScroll:true});});
+message.addEventListener('keydown',event=>{if(event.key==='Tab'){event.preventDefault();replay.focus();}});
+replay.addEventListener('click',()=>{unlockAudio();resetGame();canvas.focus({preventScroll:true});});
+window.addEventListener('resize',resize);
+paintForest();resetGame();resize();
+canvas.focus({preventScroll:true});
+function frame(timestamp){const dt=lastTime===null?0:Math.min((timestamp-lastTime)/1000,.035);lastTime=timestamp;if(!document.hidden)update(dt);draw();requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
